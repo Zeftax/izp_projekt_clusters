@@ -13,9 +13,9 @@
 /*****************************************************************
  * Ladici makra. Vypnout jejich efekt lze definici makra
  * NDEBUG, napr.:
- *   a) pri prekladu argumentem prekladaci -DNDEBUG
- *   b) v souboru (na radek pred #include <assert.h>
- *      #define NDEBUG
+ *	 a) pri prekladu argumentem prekladaci -DNDEBUG
+ *	 b) v souboru (na radek pred #include <assert.h>
+ *		#define NDEBUG
  */
 #ifdef NDEBUG
 #define debug(s)
@@ -44,24 +44,24 @@
  *
  * TYTO DEKLARACE NEMENTE
  *
- *   struct obj_t - struktura objektu: identifikator a souradnice
- *   struct cluster_t - shluk objektu:
- *      pocet objektu ve shluku,
- *      kapacita shluku (pocet objektu, pro ktere je rezervovano
- *          misto v poli),
- *      ukazatel na pole shluku.
+ *	 struct obj_t - struktura objektu: identifikator a souradnice
+ *	 struct cluster_t - shluk objektu:
+ *		pocet objektu ve shluku,
+ *		kapacita shluku (pocet objektu, pro ktere je rezervovano
+ *			misto v poli),
+ *		ukazatel na pole shluku.
  */
 
 struct obj_t {
-    int id;
-    float x;
-    float y;
+	int id;
+	float x;
+	float y;
 };
 
 struct cluster_t {
-    int size;
-    int capacity;
-    struct obj_t* obj;
+	int size;
+	int capacity;
+	struct obj_t* obj;
 };
 
 /*****************************************************************
@@ -79,12 +79,12 @@ struct cluster_t {
 */
 void init_cluster(struct cluster_t *c, int cap)
 {
-    assert(c != NULL);
-    assert(cap >= 0);
+	assert(c != NULL);
+	assert(cap >= 0);
 
 	cluster_t *temp;
 
-    temp = malloc(sizeof(obj_t) * cap);
+	temp = malloc(sizeof(obj_t) * cap);
 
 	if(temp != NULL)
 	{
@@ -104,7 +104,7 @@ void init_cluster(struct cluster_t *c, int cap)
  */
 void clear_cluster(struct cluster_t *c)
 {
-    free(c->obj);
+	free(c->obj);
 
 	init_cluster(c, 0);
 }
@@ -117,23 +117,23 @@ const int CLUSTER_CHUNK = 10;
  */
 struct cluster_t *resize_cluster(struct cluster_t *c, int new_cap)
 {
-    // TUTO FUNKCI NEMENTE
-    assert(c);
-    assert(c->capacity >= 0);
-    assert(new_cap >= 0);
+	// TUTO FUNKCI NEMENTE
+	assert(c);
+	assert(c->capacity >= 0);
+	assert(new_cap >= 0);
 
-    if (c->capacity >= new_cap)
-        return c;
+	if (c->capacity >= new_cap)
+		return c;
 
-    size_t size = sizeof(struct obj_t) * new_cap;
+	size_t size = sizeof(struct obj_t) * new_cap;
 
-    void *arr = realloc(c->obj, size);
-    if (arr == NULL)
-        return NULL;
+	void *arr = realloc(c->obj, size);
+	if (arr == NULL)
+		return NULL;
 
-    c->obj = (struct obj_t*)arr;
-    c->capacity = new_cap;
-    return c;
+	c->obj = (struct obj_t*)arr;
+	c->capacity = new_cap;
+	return c;
 }
 
 /*
@@ -163,10 +163,10 @@ void sort_cluster(struct cluster_t *c);
  */
 void merge_clusters(struct cluster_t *c1, struct cluster_t *c2)
 {
-    assert(c1 != NULL);
-    assert(c2 != NULL);
+	assert(c1 != NULL);
+	assert(c2 != NULL);
 
-    for(int i = 0; i < c2->size; i++)
+	for(int i = 0; i < c2->size; i++)
 	{
 		append_cluster(c1, c2->obj+i);
 	}
@@ -184,10 +184,10 @@ void merge_clusters(struct cluster_t *c1, struct cluster_t *c2)
 */
 int remove_cluster(struct cluster_t *carr, int narr, int idx)
 {
-    assert(idx < narr);
-    assert(narr > 0);
+	assert(idx < narr);
+	assert(narr > 0);
 
-    clear_cluster(cluster_t + idx);
+	clear_cluster(cluster_t + idx);
 
 	for(int i = idx; i < narr - 1; i++)
 	{
@@ -202,10 +202,10 @@ int remove_cluster(struct cluster_t *carr, int narr, int idx)
  */
 float obj_distance(struct obj_t *o1, struct obj_t *o2)
 {
-    assert(o1 != NULL);
-    assert(o2 != NULL);
+	assert(o1 != NULL);
+	assert(o2 != NULL);
 
-    return sqrt(pow(o1->x - o2->x, 2) + pow(o1->y - o2->y, 2));
+	return sqrt(pow(o1->x - o2->x, 2) + pow(o1->y - o2->y, 2));
 }
 
 /*
@@ -213,12 +213,12 @@ float obj_distance(struct obj_t *o1, struct obj_t *o2)
 */
 float cluster_distance(struct cluster_t *c1, struct cluster_t *c2)
 {
-    assert(c1 != NULL);
-    assert(c1->size > 0);
-    assert(c2 != NULL);
-    assert(c2->size > 0);
+	assert(c1 != NULL);
+	assert(c1->size > 0);
+	assert(c2 != NULL);
+	assert(c2->size > 0);
 
-    float smallestDistance = obj_distance(c1->obj, c2->obj);
+	float smallestDistance = obj_distance(c1->obj, c2->obj);
 
 	for(int i = 0; i < c1->size; i++)
 	{
@@ -241,11 +241,11 @@ float cluster_distance(struct cluster_t *c1, struct cluster_t *c2)
 */
 void find_neighbours(struct cluster_t *carr, int narr, int *c1, int *c2)
 {
-    assert(narr > 1);
+	assert(narr > 1);
 
 	float smallest_distance = cluster_distance(*carr, *(carr+1));
 
-    for(int i = 0; i < narr - 1; i++)
+	for(int i = 0; i < narr - 1; i++)
 	{
 		for(int j = i + 1; j < narr; j++)
 		{
@@ -259,12 +259,12 @@ void find_neighbours(struct cluster_t *carr, int narr, int *c1, int *c2)
 // pomocna funkce pro razeni shluku
 static int obj_sort_compar(const void *a, const void *b)
 {
-    // TUTO FUNKCI NEMENTE
-    const struct obj_t *o1 = (const struct obj_t *)a;
-    const struct obj_t *o2 = (const struct obj_t *)b;
-    if (o1->id < o2->id) return -1;
-    if (o1->id > o2->id) return 1;
-    return 0;
+	// TUTO FUNKCI NEMENTE
+	const struct obj_t *o1 = (const struct obj_t *)a;
+	const struct obj_t *o2 = (const struct obj_t *)b;
+	if (o1->id < o2->id) return -1;
+	if (o1->id > o2->id) return 1;
+	return 0;
 }
 
 /*
@@ -272,8 +272,8 @@ static int obj_sort_compar(const void *a, const void *b)
 */
 void sort_cluster(struct cluster_t *c)
 {
-    // TUTO FUNKCI NEMENTE
-    qsort(c->obj, c->size, sizeof(struct obj_t), &obj_sort_compar);
+	// TUTO FUNKCI NEMENTE
+	qsort(c->obj, c->size, sizeof(struct obj_t), &obj_sort_compar);
 }
 
 /*
@@ -281,13 +281,13 @@ void sort_cluster(struct cluster_t *c)
 */
 void print_cluster(struct cluster_t *c)
 {
-    // TUTO FUNKCI NEMENTE
-    for (int i = 0; i < c->size; i++)
-    {
-        if (i) putchar(' ');
-        printf("%d[%g,%g]", c->obj[i].id, c->obj[i].x, c->obj[i].y);
-    }
-    putchar('\n');
+	// TUTO FUNKCI NEMENTE
+	for (int i = 0; i < c->size; i++)
+	{
+		if (i) putchar(' ');
+		printf("%d[%g,%g]", c->obj[i].id, c->obj[i].x, c->obj[i].y);
+	}
+	putchar('\n');
 }
 
 /*
@@ -299,9 +299,64 @@ void print_cluster(struct cluster_t *c)
 */
 int load_clusters(char *filename, struct cluster_t **arr)
 {
-    assert(arr != NULL);
+	assert(arr != NULL);
 
-    // TODO
+	FILE *vstup;
+	int maxNumOfLines;
+	int id, x, y;
+	cluster_t** temp;
+	int i;
+
+	vstup = fopen(*filename, "r");
+
+	if(vstup == NULL)
+	{
+		fprintf(stderr, "Nepodarilo se otevrit vstupni soubor.");
+		return 1;
+	}
+
+	fscanf(vstup, "%s %i\n", NULL, maxNumOfLines);
+
+	temp = malloc(sizeof(*cluster_t) * vstup);
+
+	if(temp == NULL)
+	{
+		fprintf(stderr, "Nepovedlo se alokovat pamet pro pole shluku.");
+		return 1;
+	}
+	else
+	{
+		free(arr);
+		arr = temp;
+	}
+
+	i = 0;
+	while(fscanf(vstup, "%i %i %i\n", id, x, y) != EOL && i < maxNumOfLines)
+	{
+		cluster_t* cluster;
+		obj_t* object;
+
+		init_cluster(cluster, 1);
+		object = malloc(sizeof(obj_t));
+
+		if(object == NULL)
+		{
+			fprintf(stderr, "failed to allocate memory for object.");
+			return -1;
+		}
+
+		object->id = id;
+		object->x = x;
+		object->y = y;
+
+		cluster->obj = &object;
+
+		*(temp + i) = cluster
+	}
+
+	printf("%i\n", maxNumOfLines);
+
+	return i;
 }
 
 /*
@@ -310,18 +365,18 @@ int load_clusters(char *filename, struct cluster_t **arr)
 */
 void print_clusters(struct cluster_t *carr, int narr)
 {
-    printf("Clusters:\n");
-    for (int i = 0; i < narr; i++)
-    {
-        printf("cluster %d: ", i);
-        print_cluster(&carr[i]);
-    }
+	printf("Clusters:\n");
+	for (int i = 0; i < narr; i++)
+	{
+		printf("cluster %d: ", i);
+		print_cluster(&carr[i]);
+	}
 }
 
 int main(int argc, char *argv[])
 {
-    struct cluster_t *clusters;
+	struct cluster_t *clusters;
 
-    // TODO
+	load_clusters("objects", NULL);
 }
 
