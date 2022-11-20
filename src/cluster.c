@@ -319,7 +319,9 @@ int load_clusters(char *filename, struct cluster_t **arr)
 		return 1;
 	}
 
-	fscanf(vstup, "[^=][=]%i\n", &maxNumOfLines);
+	fscanf(vstup, "count=%i\n", &maxNumOfLines);
+
+	printf("max num of lines: %i\n", maxNumOfLines);
 
 	temp = malloc(sizeof(struct cluster_t*) * maxNumOfLines);
 
@@ -330,7 +332,6 @@ int load_clusters(char *filename, struct cluster_t **arr)
 	}
 	else
 	{
-		free(arr);
 		arr = temp;
 	}
 
@@ -357,11 +358,11 @@ int load_clusters(char *filename, struct cluster_t **arr)
 
 		cluster->obj = object;
 
-		*(temp + i) = cluster;
+		*(arr + i) = cluster;
+		i++;
 	}
 
-	printf("%i\n", maxNumOfLines);
-
+	printf("Read clusters: %i\n", i);
 	return i;
 }
 
@@ -382,8 +383,10 @@ void print_clusters(struct cluster_t *carr, int narr)
 int main(int argc, char *argv[])
 {
 	struct cluster_t *clusters;
+	int numOfClusters;
 
-	load_clusters("objekty", &clusters);
+	numOfClusters = load_clusters("objekty", &clusters);
+	print_clusters(clusters, numOfClusters);
 
 	printf("%i%s\n", argc, argv[0]);
 }
