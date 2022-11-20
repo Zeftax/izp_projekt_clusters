@@ -82,9 +82,9 @@ void init_cluster(struct cluster_t *c, int cap)
 	assert(c != NULL);
 	assert(cap >= 0);
 
-	cluster_t *temp;
+	struct obj_t *temp;
 
-	temp = malloc(sizeof(obj_t) * cap);
+	temp = malloc(sizeof(struct obj_t) * cap);
 
 	if(temp != NULL)
 	{
@@ -147,7 +147,7 @@ void append_cluster(struct cluster_t *c, struct obj_t obj)
 		c = resize_cluster(c, c->size + CLUSTER_CHUNK);
 
 	// prida objekt do clusteru
-	c->obj + s->size = obj;
+	*(c->obj + c->size) = obj;
 	c->size++;
 }
 
@@ -168,7 +168,7 @@ void merge_clusters(struct cluster_t *c1, struct cluster_t *c2)
 
 	for(int i = 0; i < c2->size; i++)
 	{
-		append_cluster(c1, c2->obj+i);
+		append_cluster(c1, *(c2->obj+i));
 	}
 
 	sort_cluster(c1);
@@ -187,11 +187,11 @@ int remove_cluster(struct cluster_t *carr, int narr, int idx)
 	assert(idx < narr);
 	assert(narr > 0);
 
-	clear_cluster(cluster_t + idx);
+	clear_cluster(carr + idx);
 
 	for(int i = idx; i < narr - 1; i++)
 	{
-		*(cluster_t + idx) = *(cluster_t + idx + 1);
+		*(carr + idx) = *(carr + idx + 1);
 	}
 
 	return narr - 1;
@@ -243,13 +243,13 @@ void find_neighbours(struct cluster_t *carr, int narr, int *c1, int *c2)
 {
 	assert(narr > 1);
 
-	float smallest_distance = cluster_distance(*carr, *(carr+1));
+	float smallest_distance = cluster_distance(carr, carr+1);
 
 	for(int i = 0; i < narr - 1; i++)
 	{
 		for(int j = i + 1; j < narr; j++)
 		{
-			float distance = cluster_distance(*(carr + i), *(carr+j));
+			float distance = cluster_distance(carr + i, carr+j);
 			if(distance < smallest_distance)
 				smallest_distance = distance;
 		}
@@ -304,10 +304,10 @@ int load_clusters(char *filename, struct cluster_t **arr)
 	FILE *vstup;
 	int maxNumOfLines;
 	int id, x, y;
-	cluster_t** temp;
+	struct cluster_t** temp;
 	int i;
 
-	vstup = fopen(*filename, "r");
+	vstup = fopen(filename, "r");
 
 	if(vstup == NULL)
 	{
@@ -317,7 +317,7 @@ int load_clusters(char *filename, struct cluster_t **arr)
 
 	fscanf(vstup, "%s %i\n", NULL, maxNumOfLines);
 
-	temp = malloc(sizeof(*cluster_t) * vstup);
+	temp = malloc(sizeof(struct cluster_t*) * maxNumOfLines);
 
 	if(temp == NULL)
 	{
@@ -331,13 +331,13 @@ int load_clusters(char *filename, struct cluster_t **arr)
 	}
 
 	i = 0;
-	while(fscanf(vstup, "%i %i %i\n", id, x, y) != EOL && i < maxNumOfLines)
+	while(fscanf(vstup, "%i %i %i\n", id, x, y) != EOF && i < maxNumOfLines)
 	{
-		cluster_t* cluster;
-		obj_t* object;
+		struct cluster_t* cluster;
+		struct obj_t* object;
 
 		init_cluster(cluster, 1);
-		object = malloc(sizeof(obj_t));
+		object = malloc(sizeof(struct obj_t));
 
 		if(object == NULL)
 		{
@@ -349,9 +349,9 @@ int load_clusters(char *filename, struct cluster_t **arr)
 		object->x = x;
 		object->y = y;
 
-		cluster->obj = &object;
+		cluster->obj = object;
 
-		*(temp + i) = cluster
+		*(temp + i) = cluster;
 	}
 
 	printf("%i\n", maxNumOfLines);
