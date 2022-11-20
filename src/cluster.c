@@ -94,7 +94,7 @@ void init_cluster(struct cluster_t *c, int cap)
 	}
 	else
 	{
-		fprintf(stderr, "Failed to allocate memory for cluster");
+		fprintf(stderr, "Failed to allocate memory for cluster\n");
 		free(c->obj);
 	}
 }
@@ -251,7 +251,11 @@ void find_neighbours(struct cluster_t *carr, int narr, int *c1, int *c2)
 		{
 			float distance = cluster_distance(carr + i, carr+j);
 			if(distance < smallest_distance)
+			{
 				smallest_distance = distance;
+				*c1 = i;
+				*c2 = j;
+			}
 		}
 	}
 }
@@ -311,17 +315,17 @@ int load_clusters(char *filename, struct cluster_t **arr)
 
 	if(vstup == NULL)
 	{
-		fprintf(stderr, "Nepodarilo se otevrit vstupni soubor.");
+		fprintf(stderr, "Nepodarilo se otevrit vstupni soubor.\n");
 		return 1;
 	}
 
-	fscanf(vstup, "%s %i\n", NULL, maxNumOfLines);
+	fscanf(vstup, "[^=][=]%i\n", &maxNumOfLines);
 
 	temp = malloc(sizeof(struct cluster_t*) * maxNumOfLines);
 
 	if(temp == NULL)
 	{
-		fprintf(stderr, "Nepovedlo se alokovat pamet pro pole shluku.");
+		fprintf(stderr, "Nepovedlo se alokovat pamet pro pole shluku.\n");
 		return 1;
 	}
 	else
@@ -331,17 +335,19 @@ int load_clusters(char *filename, struct cluster_t **arr)
 	}
 
 	i = 0;
-	while(fscanf(vstup, "%i %i %i\n", id, x, y) != EOF && i < maxNumOfLines)
+	while(fscanf(vstup, "%i %i %i\n", &id, &x, &y) != EOF && i < maxNumOfLines)
 	{
 		struct cluster_t* cluster;
 		struct obj_t* object;
 
-		init_cluster(cluster, 1);
 		object = malloc(sizeof(struct obj_t));
+		cluster = malloc(sizeof(struct cluster_t));
+
+		init_cluster(cluster, 1);
 
 		if(object == NULL)
 		{
-			fprintf(stderr, "failed to allocate memory for object.");
+			fprintf(stderr, "failed to allocate memory for object.\n");
 			return -1;
 		}
 
@@ -377,6 +383,8 @@ int main(int argc, char *argv[])
 {
 	struct cluster_t *clusters;
 
-	load_clusters("objects", NULL);
+	load_clusters("objekty", &clusters);
+
+	printf("%i%s\n", argc, argv[0]);
 }
 
