@@ -82,11 +82,12 @@ void init_cluster(struct cluster_t *c, int cap)
 	assert(c != NULL);
 	assert(cap >= 0);
 
-	struct obj_t *temp;
+	struct obj_t *temp = NULL;
 
-	temp = malloc(sizeof(struct obj_t) * cap);
+	if(cap > 0)
+		temp = malloc(sizeof(struct obj_t) * cap);
 
-	if(temp != NULL)
+	if(temp != NULL || cap == 0)
 	{
 		c->obj = temp;
 		c->size = 0;
@@ -94,8 +95,8 @@ void init_cluster(struct cluster_t *c, int cap)
 	}
 	else
 	{
+		free(temp);
 		fprintf(stderr, "Failed to allocate memory for cluster\n");
-		return -1;
 	}
 }
 
@@ -104,17 +105,9 @@ void init_cluster(struct cluster_t *c, int cap)
  */
 void clear_cluster(struct cluster_t *c)
 {
-/*	printf("got to clearing\n");
-	printf("first obj id: %i\n", c->obj->id);
-
-	printf("Adresa objektu: %p\n", c->obj);
-
 	if(c->obj != NULL)
 		free(c->obj);
-*/
-//	printf("freed\n");
 	init_cluster(c, 0);
-//	printf("init'd\n");
 }
 
 /// Chunk of cluster objects. Value recommended for reallocation.
@@ -332,7 +325,8 @@ int load_clusters(char *filename, struct cluster_t **arr)
 	// Check for failure to open file.
 	if(vstup == NULL)
 	{
-		fprintf(stderr, "Nepodarilo se otevrit vstupni soubor.\n");
+		fprintf(stderr, "Failed to open the input file.\n");
+		fclose(vstup);
 		return -1;
 	}
 
@@ -342,20 +336,20 @@ int load_clusters(char *filename, struct cluster_t **arr)
 	// Error reading, incorrect header format.
 	if(head_loaded < 2 || head_loaded == EOF)
 	{
-		fprintf(stderr, "Nepodarilo se precist hlavicky\n Prosim ujistete se ze"
-				"hlavicka je ve formatu count=<pocet radku>\n");
+		fprintf(stderr, "Failed to read header. Please make sure the header is "
+				"formatted as follows: count=<number of rows>\n");
 	}
 	// The start of the file is not the expected string "count="
 	else if(strcmp(head_prefix, "count=") != 0)
 	{
-		fprintf(stderr, "%s neni validni zacatek hlavicky. Hlavicka musi byt ve"
-				"formatu count=<pocet radku>\n", head_prefix);
+		fprintf(stderr, "%s is not a valid header prefix. Header has to be in "
+				"the format of count=<number of rows>\n", head_prefix);
 	}
 	// Invalid number for max number of lines
 	else if(maxNumOfLines < 1)
 	{
-		fprintf(stderr, "%i neni validni pocet radku. Pocet radku musi byt"
-				"prirozene cislo.\n", maxNumOfLines);
+		fprintf(stderr, "%i is not a valid number of rows. Number of rows has "
+				"to be a natural number.\n", maxNumOfLines);
 	}
 
 	// Allocate enough memory to be able to store all clusters to be read
@@ -364,7 +358,8 @@ int load_clusters(char *filename, struct cluster_t **arr)
 	// Memory allocation failed
 	if(clusters == NULL)
 	{
-		fprintf(stderr, "Nepovedlo se alokovat pamet pro pole shluku.\n");
+		fprintf(stderr, "Could not allocate memory for array of clusters.\n");
+		fclose(vstup);
 		return -1;
 	}
 
@@ -391,6 +386,8 @@ int load_clusters(char *filename, struct cluster_t **arr)
 		i++;
 	}
 
+	fclose(vstup);
+
 	return i;
 }
 
@@ -413,13 +410,26 @@ int main(int argc, char *argv[])
 	struct cluster_t *clusters;
 	int numOfClusters;
 
+	if(argc != 3)
+	{
+		fprintf(stderr, "Incorrect number of arguments\n");
+	}
+
 	numOfClusters = load_clusters("objekty", &clusters);
+
+	if(numOfClusters == -1)
+	{
+		fprintf(stderr, "Could not load clusters\n");
+		return -1;
+	}
+
 	print_clusters(clusters, numOfClusters);
 
 	for(int i = 0; i < numOfClusters; i++)
 	{
 		clear_cluster(clusters + i);
 	}
+
 	free(clusters);
 
 	printf("%i%s\n", argc, argv[0]);
