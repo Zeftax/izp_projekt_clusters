@@ -410,12 +410,13 @@ int main(int argc, char *argv[])
 	struct cluster_t *clusters;
 	int numOfClusters;
 
-	if(argc != 3)
+	if(argc != 2)
 	{
 		fprintf(stderr, "Incorrect number of arguments\n");
+		return -1;
 	}
 
-	numOfClusters = load_clusters("objekty", &clusters);
+	numOfClusters = load_clusters(argv[1], &clusters);
 
 	if(numOfClusters == -1)
 	{
