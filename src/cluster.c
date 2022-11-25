@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <math.h> // sqrtf
 #include <limits.h> // INT_MAX
-
+#include <string.h> // strcmp
 /*****************************************************************
  * Ladici makra. Vypnout jejich efekt lze definici makra
  * NDEBUG, napr.:
@@ -95,7 +95,7 @@ void init_cluster(struct cluster_t *c, int cap)
 	else
 	{
 		fprintf(stderr, "Failed to allocate memory for cluster\n");
-		free(c->obj);
+		return -1;
 	}
 }
 
@@ -104,9 +104,17 @@ void init_cluster(struct cluster_t *c, int cap)
  */
 void clear_cluster(struct cluster_t *c)
 {
-	free(c->obj);
+/*	printf("got to clearing\n");
+	printf("first obj id: %i\n", c->obj->id);
 
+	printf("Adresa objektu: %p\n", c->obj);
+
+	if(c->obj != NULL)
+		free(c->obj);
+*/
+//	printf("freed\n");
 	init_cluster(c, 0);
+//	printf("init'd\n");
 }
 
 /// Chunk of cluster objects. Value recommended for reallocation.
@@ -305,58 +313,80 @@ int load_clusters(char *filename, struct cluster_t **arr)
 {
 	assert(arr != NULL);
 
-	FILE *vstup;
-	int maxNumOfLines;
-	int id, x, y;
-	struct cluster_t* temp;
-	int i;
+	FILE *vstup;				// File from which to load cluster information.
+	char head_prefix[7];		// count= string at the start of the file, used
+								// only
+								// to check the validity of the header.
+	int head_loaded;			// Result of reading the header.
+	int maxNumOfLines;			// Maximum number of lines allowed to be read
+								// from the file.
+	int id;						// Id of a currently read object.
+	float x, y;					// x and y of a currently read object.
+	int i;						// Iterating variable.
+ 	struct cluster_t* clusters;	// Array into which to read clusters (basically
+								// an alias for *arr.)
 
+	// Open the file for reading.
 	vstup = fopen(filename, "r");
 
+	// Check for failure to open file.
 	if(vstup == NULL)
 	{
 		fprintf(stderr, "Nepodarilo se otevrit vstupni soubor.\n");
-		return 1;
+		return -1;
 	}
 
-	fscanf(vstup, "count=%i\n", &maxNumOfLines);
+	// Read the header.
+	head_loaded = fscanf(vstup, "%6s%d\n", head_prefix, &maxNumOfLines);
 
-	temp = malloc(sizeof(struct cluster_t*) * maxNumOfLines);
+	// Error reading, incorrect header format.
+	if(head_loaded < 2 || head_loaded == EOF)
+	{
+		fprintf(stderr, "Nepodarilo se precist hlavicky\n Prosim ujistete se ze"
+				"hlavicka je ve formatu count=<pocet radku>\n");
+	}
+	// The start of the file is not the expected string "count="
+	else if(strcmp(head_prefix, "count=") != 0)
+	{
+		fprintf(stderr, "%s neni validni zacatek hlavicky. Hlavicka musi byt ve"
+				"formatu count=<pocet radku>\n", head_prefix);
+	}
+	// Invalid number for max number of lines
+	else if(maxNumOfLines < 1)
+	{
+		fprintf(stderr, "%i neni validni pocet radku. Pocet radku musi byt"
+				"prirozene cislo.\n", maxNumOfLines);
+	}
 
-	if(temp == NULL)
+	// Allocate enough memory to be able to store all clusters to be read
+	clusters = malloc(sizeof(struct cluster_t) * maxNumOfLines);
+
+	// Memory allocation failed
+	if(clusters == NULL)
 	{
 		fprintf(stderr, "Nepovedlo se alokovat pamet pro pole shluku.\n");
-		return 1;
-	}
-	else
-	{
-		*arr = temp;
+		return -1;
 	}
 
+	// point **arr to clusters
+	*arr = clusters;
+
+	// Start reading the clusters.
 	i = 0;
-	while(fscanf(vstup, "%i %i %i\n", &id, &x, &y) != EOF && i < maxNumOfLines)
+	while(fscanf(vstup, "%i %f %f\n", &id, &x, &y) != EOF && i < maxNumOfLines)
 	{
-		struct cluster_t* cluster;
-		struct obj_t* object;
-
-		object = malloc(sizeof(struct obj_t));
-		cluster = malloc(sizeof(struct cluster_t));
+		// Tells us on what part of the clusters array we should work
+		struct cluster_t* cluster = clusters + i;
+		struct obj_t object;
 
 		init_cluster(cluster, 1);
 
-		if(object == NULL)
-		{
-			fprintf(stderr, "failed to allocate memory for object.\n");
-			return -1;
-		}
+		// Loads the read info into the object
+		object.id = id;
+		object.x = x;
+		object.y = y;
 
-		object->id = id;
-		object->x = x;
-		object->y = y;
-
-		append_cluster(cluster, *object);
-
-		*(temp + i) = *cluster;
+		append_cluster(cluster, object);
 
 		i++;
 	}
@@ -385,6 +415,12 @@ int main(int argc, char *argv[])
 
 	numOfClusters = load_clusters("objekty", &clusters);
 	print_clusters(clusters, numOfClusters);
+
+	for(int i = 0; i < numOfClusters; i++)
+	{
+		clear_cluster(clusters + i);
+	}
+	free(clusters);
 
 	printf("%i%s\n", argc, argv[0]);
 }
