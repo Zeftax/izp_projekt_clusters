@@ -13,7 +13,6 @@
 #include <string.h> // strcmp
 #include <unistd.h> // getpid
 #include <signal.h> // sigkill
-#include "cluster.h" // headers
 /*****************************************************************
  * Ladici makra. Vypnout jejich efekt lze definici makra
  * NDEBUG, napr.:
@@ -76,6 +75,11 @@ struct cluster_t {
  * IMPLEMENTUJTE POUZE FUNKCE NA MISTECH OZNACENYCH 'TODO'
  *
  */
+
+/*
+ Razeni objektu ve shluku vzestupne podle jejich identifikatoru.
+*/
+void sort_cluster(struct cluster_t *c);
 
 /*
  Inicializace shluku 'c'. Alokuje pamet pro cap objektu (kapacitu).
