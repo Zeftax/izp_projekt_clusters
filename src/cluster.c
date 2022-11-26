@@ -4,12 +4,15 @@
  * Jednoducha shlukova analyza: 2D nejblizsi soused.
  * Single linkage
  */
+#define _POSIX_SOURCE // needed for kill (needed to terminate in void func)
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h> // sqrtf
 #include <limits.h> // INT_MAX
 #include <string.h> // strcmp
+#include <unistd.h> // getpid
+#include <signal.h> // sigkill
 #include "cluster.h" // headers
 /*****************************************************************
  * Ladici makra. Vypnout jejich efekt lze definici makra
@@ -85,19 +88,22 @@ void init_cluster(struct cluster_t *c, int cap)
 
 	struct obj_t *temp = NULL;
 
+	// If the cluster should have some objects, allocate memory for them
 	if(cap > 0)
 		temp = malloc(sizeof(struct obj_t) * cap);
 
+	// If the allocation was successful, create the cluster
 	if(temp != NULL || cap == 0)
 	{
 		c->obj = temp;
 		c->size = 0;
 		c->capacity = cap;
 	}
+	// Otherwise report this incident to stderr and commit suicide
 	else
 	{
-		free(temp);
 		fprintf(stderr, "Failed to allocate memory for cluster\n");
+		kill(getpid(), SIGKILL);
 	}
 }
 
@@ -106,19 +112,23 @@ void init_cluster(struct cluster_t *c, int cap)
  */
 void clear_cluster(struct cluster_t *c)
 {
+	// If the cluster has objects erase all its objects
 	if(c->obj != NULL)
 		free(c->obj);
+	// Now initialize a new empty cluster in its place
 	init_cluster(c, 0);
 }
 
 // Frees all clusters in the array and their objects
 void free_clusters(struct cluster_t **arr, long int length)
 {
+	// Free all the memory used by the clusters objects
 	for(int i = 0; i < length; i++)
 	{
 		clear_cluster(*arr + i);
 	}
 
+	// Free the memory used by the array of clusters (the clusters themselves)
 	free(*arr);
 }
 
@@ -174,11 +184,14 @@ void merge_clusters(struct cluster_t *c1, struct cluster_t *c2)
 	assert(c1 != NULL);
 	assert(c2 != NULL);
 
+	// Go through all the objects in the second cluster
 	for(int i = 0; i < c2->size; i++)
 	{
+		// And add them to the first cluster
 		append_cluster(c1, *(c2->obj+i));
 	}
 
+	// Now sort all the objects in the first cluster
 	sort_cluster(c1);
 }
 
@@ -195,8 +208,11 @@ int remove_cluster(struct cluster_t *carr, int narr, int idx)
 	assert(idx < narr);
 	assert(narr > 0);
 
+	// Free the resources used by the specified cluster
 	clear_cluster(carr + idx);
 
+	// Shift all the clusters that were behind the specified index by one,
+	// as to fill the empty space
 	for(int i = idx; i < narr - 1; i++)
 	{
 		*(carr + i) = *(carr + i + 1);
@@ -226,13 +242,20 @@ float cluster_distance(struct cluster_t *c1, struct cluster_t *c2)
 	assert(c2 != NULL);
 	assert(c2->size > 0);
 
+	// Smallest known distance between objects
 	float smallestDistance = obj_distance(c1->obj, c2->obj);
 
+	// Go through all the objects in the first cluster
 	for(int i = 0; i < c1->size; i++)
 	{
+		// Go through all the objects in the second cluster
 		for(int j = 0; j < c2->size; j++)
 		{
+			// get the distance between the objects
 			float distance = obj_distance(c1->obj + i, c2->obj + j);
+
+			// If it is smaller that the smallest known distance,
+			// update the smallest known distance
 			if(smallestDistance > distance)
 				smallestDistance = distance;
 		}
@@ -251,16 +274,25 @@ void find_neighbours(struct cluster_t *carr, int narr, int *c1, int *c2)
 {
 	assert(narr > 1);
 
+	// Smallest known distance between clusters
 	float smallest_distance = cluster_distance(carr, carr+1);
 
+	// Go through all the clusters in the array
 	for(int i = 0; i < narr - 1; i++)
 	{
+		// Go through all the other clusters that have not been compared
+		// to the i cluster yet.
 		for(int j = i + 1; j < narr; j++)
 		{
+			// Get the distance between the two clusters
 			float distance = cluster_distance(carr + i, carr + j);
+
+			// If the distance is smaller than the smallest known distance
 			if(distance <= smallest_distance)
 			{
+				// Update the smallest known distance
 				smallest_distance = distance;
+				// And save the indicees of the clusters
 				*c1 = i;
 				*c2 = j;
 			}
@@ -525,12 +557,14 @@ int main(int argc, char *argv[])
 
 	loadedClusters = load_clusters(argv[1], &clusters);
 
+	// Some fail occured while loading the file
 	if(loadedClusters == -1)
 	{
 		fprintf(stderr, "Could not load clusters\n");
 		return -1;
-		}
+	}
 
+	// User wants us to split cluster into more clusters than we read
 	if(desiredClusters > loadedClusters)
 	{
 		fprintf(stderr, "Number of desired clusters has to be less than "
@@ -544,10 +578,13 @@ int main(int argc, char *argv[])
 	{
 		int index1, index2;	// Indexes of the closest clusters in the array
 
+		// First find two closest clusters
 		find_neighbours(clusters, loadedClusters, &index1, &index2);
 
+		// Merge the second into the first
 		merge_clusters(&clusters[index1], &clusters[index2]);
 
+		// And finaly remove the second
 		loadedClusters = remove_cluster(clusters, loadedClusters, index2);
 	}
 	// ===End of linking the clusters===
