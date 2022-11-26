@@ -313,16 +313,13 @@ int load_clusters(char *filename, struct cluster_t **arr)
 {
 	assert(arr != NULL);
 
+	int i;						// Iterator variable / number of loaded objects.
 	FILE *vstup;				// File from which to load cluster information.
 	char head_prefix[7];		// count= string at the start of the file, used
-								// only
-								// to check the validity of the header.
+								// only to check the validity of the header.
 	int head_loaded;			// Result of reading the header.
 	int maxNumOfLines;			// Maximum number of lines allowed to be read
 								// from the file.
-	int id;						// Id of a currently read object.
-	float x, y;					// x and y of a currently read object.
-	int i;						// Iterating variable.
  	struct cluster_t* clusters;	// Array into which to read clusters (basically
 								// an alias for *arr.)
 
@@ -379,13 +376,82 @@ int load_clusters(char *filename, struct cluster_t **arr)
 	// point **arr to clusters
 	*arr = clusters;
 
-	// Start reading the clusters.
-	i = 0;
-	while(fscanf(vstup, "%i %f %f\n", &id, &x, &y) != EOF && i < maxNumOfLines)
+	// Read the clusters.
+	for(i = 0; i < maxNumOfLines; i++)
 	{
+		int obj_loaded;				// Result of reading an object
+		int id;						// Id of a currently read object.
+		float x, y;					// x and y of a currently read object.
+		char lineEnd;				// Checks to see whether object line ended
+									// properly
+		struct cluster_t* cluster;	// Cluster being worked on
+		struct obj_t object;		// Object being loaded
+
+		obj_loaded = fscanf(vstup, "%i %f %f%c", &id, &x, &y, &lineEnd);
+
+		// ===Check validity of values===
+		// EOF, quit
+		if(obj_loaded == EOF)
+		{
+			fprintf(stderr, "Expected %i objects, however file contains only "
+					"%i.\n", maxNumOfLines, i+1);
+			free_clusters(arr, i);
+			fclose(vstup);
+			return -1;
+		}
+
 		// Tells us on what part of the clusters array we should work
-		struct cluster_t* cluster = clusters + i;
-		struct obj_t object;
+		cluster = clusters + i;
+
+		// Error reading, incorrect header format.
+		if(obj_loaded < 3)
+		{
+			fprintf(stderr, "Failed to read object.\n");
+			free_clusters(arr, i);
+			fclose(vstup);
+			return -1;
+		}
+		// Line does not end after last float
+		if(lineEnd != 10)
+		{
+			fprintf(stderr, "Line does not end after object.\n"
+					"Instead ends in %i", lineEnd);
+			free_clusters(arr, i);
+			fclose(vstup);
+			return -1;
+		}
+
+		// Check uniqueness of ID
+		for(int j = 0; j < i; j++)
+		{
+			if((clusters + j)->obj->id == id)
+			{
+				fprintf(stderr, "All IDs must be unique.\n");
+				free_clusters(arr, i);
+				fclose(vstup);
+				return -1;
+			}
+		}
+
+		// Check whether x and y are whole numbers
+		if(x != ceilf(x) || y != ceilf(y))
+		{
+				fprintf(stderr, "X and Y components have to be integers.\n");
+				free_clusters(arr, i);
+				fclose(vstup);
+				return -1;
+		}
+
+		// Check whether x and y are in the range <0;1000>
+		if(x < 0 || x > 1000 || y < 0 || y > 1000)
+		{
+				fprintf(stderr, "X and Y components have to be in the range "
+						"<0;1000>.\n");
+				free_clusters(arr, i);
+				fclose(vstup);
+				return -1;
+		}
+		// ===End of checking===
 
 		init_cluster(cluster, 1);
 
@@ -395,8 +461,6 @@ int load_clusters(char *filename, struct cluster_t **arr)
 		object.y = y;
 
 		append_cluster(cluster, object);
-
-		i++;
 	}
 
 	fclose(vstup);
@@ -439,7 +503,7 @@ int main(int argc, char *argv[])
 		desiredClusters = strtol(argv[2], &pEnd, 10);
 
 		// Failed reading the int
-		if(pEnd == argv[2])
+		if(pEnd == argv[2] || *pEnd != '\0')
 		{
 			fprintf(stderr, "Failed to read second argument.\n");
 			return -1;
@@ -465,7 +529,7 @@ int main(int argc, char *argv[])
 	{
 		fprintf(stderr, "Could not load clusters\n");
 		return -1;
-	}
+		}
 
 	if(desiredClusters > loadedClusters)
 	{
