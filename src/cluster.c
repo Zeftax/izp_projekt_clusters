@@ -10,6 +10,7 @@
 #include <math.h> // sqrtf
 #include <limits.h> // INT_MAX
 #include <string.h> // strcmp
+#include "cluster.h" // headers
 /*****************************************************************
  * Ladici makra. Vypnout jejich efekt lze definici makra
  * NDEBUG, napr.:
@@ -110,6 +111,17 @@ void clear_cluster(struct cluster_t *c)
 	init_cluster(c, 0);
 }
 
+// Frees all clusters in the array and their objects
+void free_clusters(struct cluster_t **arr, long int length)
+{
+	for(int i = 0; i < length; i++)
+	{
+		clear_cluster(*arr + i);
+	}
+
+	free(*arr);
+}
+
 /// Chunk of cluster objects. Value recommended for reallocation.
 const int CLUSTER_CHUNK = 10;
 
@@ -153,11 +165,6 @@ void append_cluster(struct cluster_t *c, struct obj_t obj)
 }
 
 /*
- Seradi objekty ve shluku 'c' vzestupne podle jejich identifikacniho cisla.
- */
-void sort_cluster(struct cluster_t *c);
-
-/*
  Do shluku 'c1' prida objekty 'c2'. Shluk 'c1' bude v pripade nutnosti rozsiren.
  Objekty ve shluku 'c1' budou serazeny vzestupne podle identifikacniho cisla.
  Shluk 'c2' bude nezmenen.
@@ -192,7 +199,7 @@ int remove_cluster(struct cluster_t *carr, int narr, int idx)
 
 	for(int i = idx; i < narr - 1; i++)
 	{
-		*(carr + idx) = *(carr + idx + 1);
+		*(carr + i) = *(carr + i + 1);
 	}
 
 	return narr - 1;
@@ -250,8 +257,8 @@ void find_neighbours(struct cluster_t *carr, int narr, int *c1, int *c2)
 	{
 		for(int j = i + 1; j < narr; j++)
 		{
-			float distance = cluster_distance(carr + i, carr+j);
-			if(distance < smallest_distance)
+			float distance = cluster_distance(carr + i, carr + j);
+			if(distance <= smallest_distance)
 			{
 				smallest_distance = distance;
 				*c1 = i;
@@ -338,18 +345,24 @@ int load_clusters(char *filename, struct cluster_t **arr)
 	{
 		fprintf(stderr, "Failed to read header. Please make sure the header is "
 				"formatted as follows: count=<number of rows>\n");
+		fclose(vstup);
+		return -1;
 	}
 	// The start of the file is not the expected string "count="
 	else if(strcmp(head_prefix, "count=") != 0)
 	{
 		fprintf(stderr, "%s is not a valid header prefix. Header has to be in "
 				"the format of count=<number of rows>\n", head_prefix);
+		fclose(vstup);
+		return -1;
 	}
 	// Invalid number for max number of lines
 	else if(maxNumOfLines < 1)
 	{
 		fprintf(stderr, "%i is not a valid number of rows. Number of rows has "
 				"to be a natural number.\n", maxNumOfLines);
+		fclose(vstup);
+		return -1;
 	}
 
 	// Allocate enough memory to be able to store all clusters to be read
@@ -407,32 +420,76 @@ void print_clusters(struct cluster_t *carr, int narr)
 
 int main(int argc, char *argv[])
 {
-	struct cluster_t *clusters;
-	int numOfClusters;
+	struct cluster_t *clusters;				// Array of clusters
+	int loadedClusters, desiredClusters;	// Number of loaded and desired
+											// clusters
 
-	if(argc != 2)
+	// ===Read arguments===
+	// Only file provided, assume desired number of clusters is 1
+	if(argc == 2)
+	{
+		desiredClusters = 1;
+	}
+	// User also provided desired number of clusters
+	else if(argc == 3)
+	{
+		char *pEnd;	// Points to the end of a converted long int.
+
+		// Reads and converts the second argument
+		desiredClusters = strtol(argv[2], &pEnd, 10);
+
+		// Failed reading the int
+		if(pEnd == argv[2])
+		{
+			fprintf(stderr, "Failed to read second argument.\n");
+			return -1;
+		}
+		// Invalid value
+		else if(desiredClusters <= 0)
+		{
+			fprintf(stderr, "Number of desired clusters has to be a natural "
+					"number.\n");
+			return -1;
+		}
+	}
+	else
 	{
 		fprintf(stderr, "Incorrect number of arguments\n");
 		return -1;
 	}
+	// ===End of reading arguments===
 
-	numOfClusters = load_clusters(argv[1], &clusters);
+	loadedClusters = load_clusters(argv[1], &clusters);
 
-	if(numOfClusters == -1)
+	if(loadedClusters == -1)
 	{
 		fprintf(stderr, "Could not load clusters\n");
 		return -1;
 	}
 
-	print_clusters(clusters, numOfClusters);
-
-	for(int i = 0; i < numOfClusters; i++)
+	if(desiredClusters > loadedClusters)
 	{
-		clear_cluster(clusters + i);
+		fprintf(stderr, "Number of desired clusters has to be less than "
+				"the number of loaded numbers.\n");
+		free_clusters(&clusters, loadedClusters);
+		return -1;
 	}
 
-	free(clusters);
+	// ===Link the clusters===
+	while(loadedClusters != desiredClusters)
+	{
+		int index1, index2;	// Indexes of the closest clusters in the array
 
-	printf("%i%s\n", argc, argv[0]);
+		find_neighbours(clusters, loadedClusters, &index1, &index2);
+
+		merge_clusters(&clusters[index1], &clusters[index2]);
+
+		loadedClusters = remove_cluster(clusters, loadedClusters, index2);
+	}
+	// ===End of linking the clusters===
+
+	print_clusters(clusters, loadedClusters);
+
+	free_clusters(&clusters, loadedClusters);
 }
 
