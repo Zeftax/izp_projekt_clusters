@@ -538,10 +538,21 @@ int main(int argc, char *argv[])
 	// User also provided desired number of clusters
 	else if(argc == 3)
 	{
-		char *pEnd;	// Points to the end of a converted long int.
+		char *pEnd;		// Points to the end of a converted long int.
+		long readVal;	// Value read (may not neccesarily be int compatible)
 
 		// Reads and converts the second argument
-		desiredClusters = strtol(argv[2], &pEnd, 10);
+		readVal = strtol(argv[2], &pEnd, 10);
+
+		// Check if read value is int
+		if(readVal < INT_MIN || readVal > INT_MAX)
+		{
+			fprintf(stderr, "Number of desired clusters is too big for int.\n");
+			return -1;
+		}
+
+		// Set the desired clusters from the read value
+		desiredClusters = readVal;
 
 		// Failed reading the int
 		if(pEnd == argv[2] || *pEnd != '\0')
