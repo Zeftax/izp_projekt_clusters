@@ -4,15 +4,12 @@
  * Jednoducha shlukova analyza: 2D nejblizsi soused.
  * Single linkage
  */
-#define _POSIX_SOURCE // needed for kill (needed to terminate in void func)
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h> // sqrtf
 #include <limits.h> // INT_MAX
 #include <string.h> // strcmp
-#include <unistd.h> // getpid
-#include <signal.h> // sigkill
 /*****************************************************************
  * Ladici makra. Vypnout jejich efekt lze definici makra
  * NDEBUG, napr.:
@@ -85,7 +82,7 @@ void sort_cluster(struct cluster_t *c);
  Inicializace shluku 'c'. Alokuje pamet pro cap objektu (kapacitu).
  Ukazatel NULL u pole objektu znamena kapacitu 0.
 */
-void init_cluster(struct cluster_t *c, int cap)
+int init_cluster(struct cluster_t *c, int cap)
 {
 	assert(c != NULL);
 	assert(cap >= 0);
@@ -102,12 +99,13 @@ void init_cluster(struct cluster_t *c, int cap)
 		c->obj = temp;
 		c->size = 0;
 		c->capacity = cap;
+		return 0;
 	}
-	// Otherwise report this incident to stderr and commit suicide
+	// Otherwise report this incident to stderr and return error
 	else
 	{
 		fprintf(stderr, "Failed to allocate memory for cluster\n");
-		kill(getpid(), SIGKILL);
+		return -1;
 	}
 }
 
@@ -472,24 +470,31 @@ int load_clusters(char *filename, struct cluster_t **arr)
 		// Check whether x and y are whole numbers
 		if(x != ceilf(x) || y != ceilf(y))
 		{
-				fprintf(stderr, "X and Y components have to be integers.\n");
-				free_clusters(arr, i);
-				fclose(vstup);
-				return -1;
+			fprintf(stderr, "X and Y components have to be integers.\n");
+			free_clusters(arr, i);
+			fclose(vstup);
+			return -1;
 		}
 
 		// Check whether x and y are in the range <0;1000>
 		if(x < 0 || x > 1000 || y < 0 || y > 1000)
 		{
-				fprintf(stderr, "X and Y components have to be in the range "
-						"<0;1000>.\n");
-				free_clusters(arr, i);
-				fclose(vstup);
-				return -1;
+			fprintf(stderr, "X and Y components have to be in the range "
+					"<0;1000>.\n");
+			free_clusters(arr, i);
+			fclose(vstup);
+			return -1;
 		}
 		// ===End of checking===
 
-		init_cluster(cluster, 1);
+		// Initialize the cluster
+		if(init_cluster(cluster, 1) == -1)
+		{
+			// If allocating memory for the obj failed, clean up and exit
+			free_clusters(arr, i);
+			fclose(vstup);
+			return -1;
+		}
 
 		// Loads the read info into the object
 		object.id = id;
