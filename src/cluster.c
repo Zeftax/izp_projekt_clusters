@@ -1,4 +1,13 @@
 /**
+ * Zdenek Borovec (xborov08)
+ * 2022/12/05
+ *
+ * 2. projekt IZP 2022/23
+ *
+ * Jednoducha shlukova analyza: 2D nejblizsi soused.
+ * Single linkage
+ */
+/**
  * Kostra programu pro 2. projekt IZP 2022/23
  *
  * Jednoducha shlukova analyza: 2D nejblizsi soused.
