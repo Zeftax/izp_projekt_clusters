@@ -444,6 +444,7 @@ int load_clusters(char *filename, struct cluster_t **arr)
 			fclose(vstup);
 			return -1;
 		}
+
 		// Line does not end after last float
 		if(lineEnd != '\n')
 		{
