@@ -448,7 +448,7 @@ int load_clusters(char *filename, struct cluster_t **arr)
 			return -1;
 		}
 		// Line does not end after last float
-		if(lineEnd != 10)
+		if(lineEnd != '\n')
 		{
 			fprintf(stderr, "Line does not end after object.\n"
 					"Instead ends in %i", lineEnd);
