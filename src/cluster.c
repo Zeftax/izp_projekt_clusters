@@ -175,7 +175,7 @@ void append_cluster(struct cluster_t *c, struct obj_t obj)
 		c = resize_cluster(c, c->size + CLUSTER_CHUNK);
 
 	// prida objekt do clusteru
-	*(c->obj + c->size) = obj;
+	c->obj[c->size] = obj;
 	c->size++;
 }
 
@@ -193,7 +193,7 @@ void merge_clusters(struct cluster_t *c1, struct cluster_t *c2)
 	for(int i = 0; i < c2->size; i++)
 	{
 		// And add them to the first cluster
-		append_cluster(c1, *(c2->obj+i));
+		append_cluster(c1, c2->obj[i]);
 	}
 
 	// Now sort all the objects in the first cluster
@@ -220,7 +220,7 @@ int remove_cluster(struct cluster_t *carr, int narr, int idx)
 	// as to fill the empty space
 	for(int i = idx; i < narr - 1; i++)
 	{
-		*(carr + i) = *(carr + i + 1);
+		carr[i] = carr[i + 1];
 	}
 
 	return narr - 1;
@@ -281,6 +281,7 @@ void find_neighbours(struct cluster_t *carr, int narr, int *c1, int *c2)
 
 	// Smallest known distance between clusters
 	float smallest_distance = cluster_distance(carr, carr+1);
+
 
 	// Go through all the clusters in the array
 	for(int i = 0; i < narr - 1; i++)
@@ -606,7 +607,7 @@ int main(int argc, char *argv[])
 		find_neighbours(clusters, loadedClusters, &index1, &index2);
 
 		// Merge the second into the first
-		merge_clusters(&clusters[index1], &clusters[index2]);
+		merge_clusters(clusters + index1, clusters +index2);
 
 		// And finaly remove the second
 		loadedClusters = remove_cluster(clusters, loadedClusters, index2);
