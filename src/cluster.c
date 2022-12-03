@@ -565,7 +565,7 @@ int main(int argc, char *argv[])
 		desiredClusters = readVal;
 
 		// Invalid value
-		else if(desiredClusters <= 0)
+		if(desiredClusters <= 0)
 		{
 			fprintf(stderr, "Number of desired clusters has to be a natural "
 					"number.\n");
