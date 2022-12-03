@@ -436,9 +436,6 @@ int load_clusters(char *filename, struct cluster_t **arr)
 			return -1;
 		}
 
-		// Tells us on what part of the clusters array we should work
-		cluster = clusters + i;
-
 		// Error reading, incorrect header format.
 		if(obj_loaded < 3)
 		{
@@ -488,6 +485,9 @@ int load_clusters(char *filename, struct cluster_t **arr)
 			return -1;
 		}
 		// ===End of checking===
+
+		// Tells us on what part of the clusters array we should work
+		cluster = clusters + i;
 
 		// Initialize the cluster
 		if(init_cluster(cluster, 1) == -1)
