@@ -547,6 +547,13 @@ int main(int argc, char *argv[])
 		// Reads and converts the second argument
 		readVal = strtol(argv[2], &pEnd, 10);
 
+		// Failed reading the int
+		if(pEnd == argv[2] || *pEnd != '\0')
+		{
+			fprintf(stderr, "Failed to read second argument.\n");
+			return -1;
+		}
+
 		// Check if read value is int
 		if(readVal < INT_MIN || readVal > INT_MAX)
 		{
@@ -557,12 +564,6 @@ int main(int argc, char *argv[])
 		// Set the desired clusters from the read value
 		desiredClusters = readVal;
 
-		// Failed reading the int
-		if(pEnd == argv[2] || *pEnd != '\0')
-		{
-			fprintf(stderr, "Failed to read second argument.\n");
-			return -1;
-		}
 		// Invalid value
 		else if(desiredClusters <= 0)
 		{
