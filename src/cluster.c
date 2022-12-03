@@ -437,7 +437,7 @@ int load_clusters(char *filename, struct cluster_t **arr)
 		}
 
 		// Error reading, incorrect header format.
-		if(obj_loaded < 3)
+		if(obj_loaded != 4)
 		{
 			fprintf(stderr, "Failed to read object.\n");
 			free_clusters(arr, i);
