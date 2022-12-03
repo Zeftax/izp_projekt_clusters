@@ -372,7 +372,7 @@ int load_clusters(char *filename, struct cluster_t **arr)
 	}
 
 	// Read the header.
-	head_loaded = fscanf(vstup, "%6s%d\n", head_prefix, &maxNumOfLines);
+	head_loaded = fscanf(vstup, "%6s%d", head_prefix, &maxNumOfLines);
 
 	// Error reading, incorrect header format.
 	if(head_loaded < 2 || head_loaded == EOF)
