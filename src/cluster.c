@@ -367,7 +367,6 @@ int load_clusters(char *filename, struct cluster_t **arr)
 	if(vstup == NULL)
 	{
 		fprintf(stderr, "Failed to open the input file.\n");
-		fclose(vstup);
 		return -1;
 	}
 
