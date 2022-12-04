@@ -469,7 +469,7 @@ int load_clusters(char *filename, struct cluster_t **arr)
 		}
 
 		// Check whether x and y are whole numbers
-		if(x != ceilf(x) || y != ceilf(y))
+		if(x != (int) x || y != (int) y)
 		{
 			fprintf(stderr, "X and Y components have to be integers.\n");
 			free_clusters(arr, i);
